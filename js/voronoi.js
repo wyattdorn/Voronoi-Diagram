@@ -5,13 +5,24 @@
 const canvasWidth = 800;
 const canvasHeight = 800;
 
+//The number of seeds/cells in the diagram
 let numSeeds = 35;
 
+//Size of each "pixel" in each cell
 let pixelSize = 10;
 
+//Default values for drawint eh seed locations to the canvas
+let seedSize = 5;
+let seedColor = "black";
+
+//Height of UI region
+let uiHeight = 100;
+
+//The (x,y) coordinates of each seed, and the color of their associated cell
 let seedLocations = [];
 let seedColors = [];
 
+//List of buttons and their values
 let buttonList = [];
 
 //Variables for the canvas and canvas context used in game
@@ -23,7 +34,7 @@ function init(){
   canvas.style.left = "0px";
   canvas.style.top = "0px";
   canvas.style.position = "absolute";
-  canvas.height = canvasHeight + 100;
+  canvas.height = canvasHeight + uiHeight;
   canvas.width = canvasWidth;
 
   canvas.onmousedown = logMouseDown;
@@ -36,9 +47,7 @@ function init(){
   }
 
   generateButtons();
-
   generateSeeds();
-
   update();
 
 
@@ -146,15 +155,14 @@ function generateButtons(){
 
 }//end generateButtons();
 
+//////////////////////////////////////////////////////////////////////////////
+//  Draw the UI to the screen
+//////////////////////////////////////////////////////////////////////////////
 function drawUI(){
 
   ctx.save();
 
-  ctx.fillStyle = "white";
-  ctx.fillRect(0, canvasHeight, canvasWidth, 100);
-
   ctx.fillStyle = "black"
-
   ctx.font = "20px Courier";
   ctx.fillText("Pixel size:",  218, canvasHeight + 22);
   ctx.fillText("# of cells:",  378, canvasHeight + 22);
@@ -167,6 +175,7 @@ function drawUI(){
   if(numSeeds.toString().length == 1){ offset = 15;}
   ctx.fillText(numSeeds, 415 + offset, canvasHeight + 70);
 
+  //Itterate through each button, drawing them to screen
   for(let x = 0; x < buttonList.length; x++){
 
     ctx.fillStyle = "black";
@@ -182,16 +191,24 @@ function drawUI(){
 
 }//end drawUI()
 
-
+//////////////////////////////////////////////////////////////////////////////
+//  Generate and return a random location within the canvas
+//////////////////////////////////////////////////////////////////////////////
 function generateSeedLocation(){
   return [Math.floor(Math.random() * canvasWidth), Math.floor(Math.random() * canvasHeight)];
-}
+}//end generateSeedLocation()
 
+//////////////////////////////////////////////////////////////////////////////
+//  Generate and return a random rgb color value
+//////////////////////////////////////////////////////////////////////////////
 function generateSeedColor(){
   return "rgb(" + Math.floor(Math.random() * 255) + "," + Math.floor(Math.random() * 255) + "," + Math.floor(Math.random() * 255) + ")";
-}
+}//end generateSeedColor()
 
 
+//////////////////////////////////////////////////////////////////////////////
+//  Generate the list of seeds and colors for each associated cell
+//////////////////////////////////////////////////////////////////////////////
 function generateSeeds(){
 
   for(let x = 0; x < numSeeds; x++){
@@ -201,17 +218,24 @@ function generateSeeds(){
 
 }//generateSeeds()
 
-
+//////////////////////////////////////////////////////////////////////////////
+//  Itterate through each pixel (defined by pixelSize), and determine which seed
+// is closest, then colors that pixel accordingly.
+//////////////////////////////////////////////////////////////////////////////
 function getClosestPoint(){
 
   ctx.save();
 
+  //Itterarte through each "pixel" on the canvas
   for(let x = 0; x < canvasWidth/pixelSize; x++){
     for(let y = 0; y < canvasHeight/pixelSize; y++){
 
+      //Set default values to chech against
       let minDistance = canvasWidth;
       let closestSeed = 0;
 
+      // Itterate through each seed, determine the distance, and save whichever
+      // seed is closest to the "pixel".
       for(let z = 0; z < numSeeds; z++){
         let distance = Math.sqrt( Math.pow((x * pixelSize + (pixelSize/2) - seedLocations[z][0]),2) + Math.pow((y * pixelSize + (pixelSize/2) - seedLocations[z][1]),2) );
         if(distance < minDistance){
@@ -219,69 +243,57 @@ function getClosestPoint(){
           closestSeed = z;
         }
       }
-
+      //Draw the "pixel" to the canvas according to the color of the closest seed
       ctx.fillStyle = seedColors[closestSeed];
-
       ctx.fillRect(x*pixelSize, y*pixelSize, pixelSize, pixelSize);
-
-
     }
   }
-
   ctx.restore();
 
 }//end getClosestPoint()
 
-
-function drawPoints(){
+//////////////////////////////////////////////////////////////////////////////
+//  Draws the location of each seed to the screen
+//////////////////////////////////////////////////////////////////////////////
+function drawSeeds(){
 
   ctx.save();
 
+  //Itterate through each seed, drawing a circle at the location of each
   for(let x = 0; x < numSeeds; x++){
-    ctx.fillStyle = "black";
+    ctx.fillStyle = seedColor;
     ctx.beginPath();
-    ctx.arc(seedLocations[x][0], seedLocations[x][1], 5, 0, 2 * Math.PI);
+    ctx.arc(seedLocations[x][0], seedLocations[x][1], seedSize, 0, 2 * Math.PI);
     ctx.fill();
   }
 
   ctx.restore();
 
-}//end drawPoints()
+}//end drawSeeds()
 
-
+//////////////////////////////////////////////////////////////////////////////
+//  Redraws the screen
+//////////////////////////////////////////////////////////////////////////////
 function update(){
 
   ctx.save();
 
   ctx.fillStyle = "white";
-  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+  ctx.fillRect(0, 0, canvasWidth, canvasHeight + uiHeight);
 
   getClosestPoint();
-
-  drawPoints();
-
+  drawSeeds();
   drawUI();
 
   ctx.restore();
 
 }//end update()
 
-
-
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-
+//////////////////////////////////////////////////////////////////////////////
+//  Runs when the mouse is clicked on the canvas, checks for button hits
+//////////////////////////////////////////////////////////////////////////////
 function logMouseDown(e){
   var clickPosition = [];
-
-
 
   //get mouse location at time of click
   e = event || window.event;
@@ -292,13 +304,13 @@ function logMouseDown(e){
           clickPosition.x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft - 8;
     }
   if (mouseYPos === undefined) {
-        clickPosition.y = e.clientY - 8;// + document.body.scrollLeft + document.documentElement.scrollLeft;
+        clickPosition.y = e.clientY - 8;
     }
 
+  //If the click wasn't in the UI area, exit function
   if(clickPosition.y < canvasHeight){ return;}
 
-
-
+  //Itterate through each button and, if one was clicked, perfrom the associated function
   for(let x = 0; x < buttonList.length; x++){
     let btn = buttonList[x];
     if(clickPosition.x > btn.xPos && clickPosition.x < btn.xPos + btn.width && clickPosition.y > btn.yPos && clickPosition.y < btn.yPos + btn.height){
@@ -306,6 +318,5 @@ function logMouseDown(e){
       btn.function();
     }
   }
-
 
 }//end logMouseDown()
