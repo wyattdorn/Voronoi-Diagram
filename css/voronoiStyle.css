@@ -1,0 +1,10 @@
+body {
+	text-align: center;
+	background-color: #000;
+}
+
+#canvas{
+	position:fixed;
+	z-index: -2;
+	cursor: pointer;
+}
