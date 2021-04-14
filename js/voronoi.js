@@ -1,4 +1,5 @@
-//Written by Wyatt Dorn
+// Written by: Wyatt Dorn
+// 4/14/21
 
 
 //The width and height of the canvas used in the game

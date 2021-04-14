@@ -1,3 +1,8 @@
+/*
+Written by: Wyatt Kelledorn
+4/14/21
+*/
+
 body {
 	text-align: center;
 	background-color: #000;
@@ -7,4 +12,8 @@ body {
 	position:fixed;
 	z-index: -2;
 	cursor: pointer;
+}
+
+canvas {
+  -webkit-tap-highlight-color: transparent;
 }
