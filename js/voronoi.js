@@ -12,12 +12,21 @@ let numSeeds = 35;
 //Size of each "pixel" in each cell
 let pixelSize = 10;
 
+let pixelList = [];
+
+let showBorders = false;
+
 //Default values for drawint eh seed locations to the canvas
 let seedSize = 5;
 let seedColor = "black";
 
-//Height of UI region
+//Height of bottom UI region
 let uiHeight = 100;
+
+//Width of UI sidebar region
+let sidebarWidth = 100;
+
+let colorPallette = null;
 
 //The (x,y) coordinates of each seed, and the color of their associated cell
 let seedLocations = [];
@@ -36,7 +45,7 @@ function init(){
   canvas.style.top = "0px";
   canvas.style.position = "absolute";
   canvas.height = canvasHeight + uiHeight;
-  canvas.width = canvasWidth;
+  canvas.width = canvasWidth + sidebarWidth;
 
   canvas.onmousedown = logMouseDown;
 
@@ -54,107 +63,7 @@ function init(){
 
 }//end init()
 
-//////////////////////////////////////////////////////////////////////////////
-//  Define the values for all buttons used in this program
-//////////////////////////////////////////////////////////////////////////////
-function generateButtons(){
 
-  buttonList.push( {
-    name: "Decrease pixel size.",
-    text: "-",
-    fontSize: 40,
-    xPos: 215,
-    yPos: canvasHeight + 30,
-    width: 40,
-    height: 50,
-    function: function a(){
-      if(pixelSize==1){return;}
-      pixelSize--;
-      update();
-    }
-  });
-
-  buttonList.push( {
-    name: "Increase pixel size.",
-    text: "+",
-    fontSize: 40,
-    xPos: 320,
-    yPos: canvasHeight + 30,
-    width: 40,
-    height: 50,
-    function: function a(){
-      if(pixelSize==99){return;}
-      pixelSize++;
-      update();
-    }
-  });
-
-  buttonList.push( {
-    name: "Decrease number of seeds.",
-    text: "-",
-    fontSize: 40,
-    xPos: 375,
-    yPos: canvasHeight + 30,
-    width: 40,
-    height: 50,
-    function: function a(){
-      if(numSeeds==1){return;}
-      numSeeds--;
-      seedLocations.pop();
-      seedColors.pop();
-      update();
-    }
-  });
-
-  buttonList.push( {
-    name: "Increase number of seeds.",
-    text: "+",
-    fontSize: 40,
-    xPos: 480,
-    yPos: canvasHeight + 30,
-    width: 40,
-    height: 50,
-    function: function a(){
-      if(numSeeds==99){return;}
-      numSeeds++;
-      seedLocations.push(generateSeedLocation());
-      seedColors.push(generateSeedColor());
-      update();
-    }
-  });
-
-  buttonList.push( {
-    name: "Refresh.",
-    text: "Refresh",
-    fontSize: 40,
-    xPos: 10,
-    yPos: canvasHeight + 30,
-    width: 190,
-    height: 50,
-    function: function a(){
-      seedLocations = [];
-      seedColors = [];
-      generateSeeds();
-      update();
-    }
-  });
-
-  buttonList.push( {
-    name: "New colors.",
-    text: "New colors",
-    fontSize: 40,
-    xPos: 535,
-    yPos: canvasHeight + 30,
-    width: 255,
-    height: 50,
-    function: function a(){
-      seedColors = [];
-      generateSeeds();
-      update();
-    }
-  });
-
-}//end generateButtons();
 
 //////////////////////////////////////////////////////////////////////////////
 //  Draw the UI to the screen
@@ -163,10 +72,15 @@ function drawUI(){
 
   ctx.save();
 
+  ctx.fillStyle = "#888"
+  ctx.fillRect(canvasWidth, 0, sidebarWidth, canvasHeight);
+
   ctx.fillStyle = "black"
   ctx.font = "20px Courier";
   ctx.fillText("Pixel size:",  218, canvasHeight + 22);
   ctx.fillText("# of cells:",  378, canvasHeight + 22);
+  ctx.fillText("Borders:",  805, 535);
+  ctx.fillText("Seeds:",  815, 670);
 
   ctx.font = "50px Courier";
   let offset = 0;
@@ -179,10 +93,10 @@ function drawUI(){
   //Itterate through each button, drawing them to screen
   for(let x = 0; x < buttonList.length; x++){
 
-    ctx.fillStyle = "black";
+    ctx.fillStyle = buttonList[x].buttonColor;
     ctx.fillRect(buttonList[x].xPos, buttonList[x].yPos, buttonList[x].width, buttonList[x].height);
 
-    ctx.fillStyle = "#aaa";
+    ctx.fillStyle = buttonList[x].fontColor;
     ctx.font = buttonList[x].fontSize + "px Courier";
     ctx.fillText(buttonList[x].text, buttonList[x].xPos + 8, buttonList[x].yPos + (0.9 * buttonList[x].fontSize));
 
@@ -203,7 +117,10 @@ function generateSeedLocation(){
 //  Generate and return a random rgb color value
 //////////////////////////////////////////////////////////////////////////////
 function generateSeedColor(){
-  return "rgb(" + Math.floor(Math.random() * 255) + "," + Math.floor(Math.random() * 255) + "," + Math.floor(Math.random() * 255) + ")";
+  if(colorPallette == null){
+    return "rgb(" + Math.floor(Math.random() * 255) + "," + Math.floor(Math.random() * 255) + "," + Math.floor(Math.random() * 255) + ")";
+  }
+  return "rgb(" + (Math.floor(Math.random() * 205 + 50) * colorPallette[0]) + "," + (Math.floor(Math.random() * 205 + 50) * colorPallette[1]) + "," + (Math.floor(Math.random() * 205 + 50) * colorPallette[2]) + ")";
 }//end generateSeedColor()
 
 
@@ -229,6 +146,7 @@ function getClosestPoint(){
 
   //Itterarte through each "pixel" on the canvas
   for(let x = 0; x < canvasWidth/pixelSize; x++){
+    pixelList[x] = [];
     for(let y = 0; y < canvasHeight/pixelSize; y++){
 
       //Set default values to chech against
@@ -244,6 +162,9 @@ function getClosestPoint(){
           closestSeed = z;
         }
       }
+
+      pixelList[x][y] = closestSeed;
+
       //Draw the "pixel" to the canvas according to the color of the closest seed
       ctx.fillStyle = seedColors[closestSeed];
       ctx.fillRect(x*pixelSize, y*pixelSize, pixelSize, pixelSize);
@@ -252,6 +173,41 @@ function getClosestPoint(){
   ctx.restore();
 
 }//end getClosestPoint()
+
+//////////////////////////////////////////////////////////////////////////////
+//
+//////////////////////////////////////////////////////////////////////////////
+function drawBorders(){
+
+  console.log("test");
+
+  ctx.save();
+
+  //Define relative coordinates of all neighboring pixels
+  let neighbors = [[-1, -1], [0, -1], [1, -1],
+                    [-1, 0],          [1, 0],
+                    [-1, 1], [0, 1],  [1,1]];
+
+  ctx.fillStyle = "black";
+
+  //Itterarte through each "pixel" on the canvas
+  for(let x = 0; x < canvasWidth/pixelSize; x++){
+    for(let y = 0; y < canvasHeight/pixelSize; y++){
+
+      // Check each neighbor. If their value is different from the current pixel,
+      // fill the current pixel in with black
+      for(let z = 0; z < neighbors.length; z++){
+        if(x + neighbors[z][0] < 0 || x + neighbors[z][0] > canvasWidth/pixelSize -1 || y + neighbors[z][1] < 0 || y + neighbors[z][1] > canvasHeight/pixelSize -1 ){continue;}
+        if(pixelList[x][y] != pixelList[x + neighbors[z][0]][y + neighbors[z][1]]){
+          ctx.fillRect(x*pixelSize, y*pixelSize, pixelSize, pixelSize);
+          continue;
+        }
+      }
+    }
+  }
+  ctx.restore();
+
+}//end getBorders()
 
 //////////////////////////////////////////////////////////////////////////////
 //  Draws the location of each seed to the screen
@@ -280,15 +236,394 @@ function update(){
   ctx.save();
 
   ctx.fillStyle = "white";
-  ctx.fillRect(0, 0, canvasWidth, canvasHeight + uiHeight);
+  ctx.fillRect(0, 0, canvasWidth  + sidebarWidth, canvasHeight + uiHeight);
 
   getClosestPoint();
   drawSeeds();
   drawUI();
 
+  if(showBorders){ drawBorders();}
+
   ctx.restore();
 
 }//end update()
+
+//////////////////////////////////////////////////////////////////////////////
+//  Define the values for all buttons used in this program
+//////////////////////////////////////////////////////////////////////////////
+function generateButtons(){
+
+  buttonList.push( {
+    name: "Decrease pixel size.",
+    text: "-",
+    fontSize: 40,
+    fontColor: "#aaa",
+    buttonColor: "black",
+    xPos: 215,
+    yPos: canvasHeight + 30,
+    width: 40,
+    height: 50,
+    function: function a(){
+      if(pixelSize==1){return;}
+      pixelSize--;
+      update();
+    }
+  });
+
+  buttonList.push( {
+    name: "Increase pixel size.",
+    text: "+",
+    fontSize: 40,
+    fontColor: "#aaa",
+    buttonColor: "black",
+    xPos: 320,
+    yPos: canvasHeight + 30,
+    width: 40,
+    height: 50,
+    function: function a(){
+      if(pixelSize==99){return;}
+      pixelSize++;
+      update();
+    }
+  });
+
+  buttonList.push( {
+    name: "Decrease number of seeds.",
+    text: "-",
+    fontSize: 40,
+    fontColor: "#aaa",
+    buttonColor: "black",
+    xPos: 375,
+    yPos: canvasHeight + 30,
+    width: 40,
+    height: 50,
+    function: function a(){
+      if(numSeeds==1){return;}
+      numSeeds--;
+      seedLocations.pop();
+      seedColors.pop();
+      update();
+    }
+  });
+
+  buttonList.push( {
+    name: "Increase number of seeds.",
+    text: "+",
+    fontSize: 40,
+    fontColor: "#aaa",
+    buttonColor: "black",
+    xPos: 480,
+    yPos: canvasHeight + 30,
+    width: 40,
+    height: 50,
+    function: function a(){
+      if(numSeeds==99){return;}
+      numSeeds++;
+      seedLocations.push(generateSeedLocation());
+      seedColors.push(generateSeedColor());
+      update();
+    }
+  });
+
+  buttonList.push( {
+    name: "Refresh.",
+    text: "Refresh",
+    fontSize: 40,
+    fontColor: "#aaa",
+    buttonColor: "black",
+    xPos: 10,
+    yPos: canvasHeight + 30,
+    width: 190,
+    height: 50,
+    function: function a(){
+      colorPallette = null;
+      seedLocations = [];
+      seedColors = [];
+      generateSeeds();
+      update();
+    }
+  });
+
+  buttonList.push( {
+    name: "Scramble colors.",
+    text: "Scramble colors",
+    fontSize: 38,
+    fontColor: "#aaa",
+    buttonColor: "black",
+    xPos: 530,
+    yPos: canvasHeight + 30,
+    width: 360,
+    height: 50,
+    function: function a(){
+      colorPallette = null;
+      seedColors = [];
+      generateSeeds();
+      update();
+    }
+  });
+
+  buttonList.push( {
+    name: "Red",
+    text: "red",
+    fontSize: 30,
+    buttonColor: "red",
+    fontColor: "black",
+    xPos: 808,
+    yPos: 10,
+    width: 84,
+    height: 50,
+    function: function a(){
+      seedColors = [];
+      colorPallette = [1,0,0];
+      for(let x = 0; x < numSeeds; x++){
+        seedColors.push(generateSeedColor());
+      }
+      update();
+    }
+  });
+
+  buttonList.push( {
+    name: "Green",
+    text: "grn",
+    fontSize: 30,
+    buttonColor: "green",
+    fontColor: "black",
+    xPos: 808,
+    yPos: 75,
+    width: 84,
+    height: 50,
+    function: function a(){
+      seedColors = [];
+      colorPallette = [0,1,0];
+      for(let x = 0; x < numSeeds; x++){
+        seedColors.push(generateSeedColor());
+      }
+      update();
+    }
+  });
+
+  buttonList.push( {
+    name: "Blue",
+    text: "blue",
+    buttonColor: "blue",
+    fontColor: "black",
+    fontSize: 30,
+    xPos: 808,
+    yPos: 140,
+    width: 84,
+    height: 50,
+    function: function a(){
+      seedColors = [];
+      colorPallette = [0,0,1];
+      for(let x = 0; x < numSeeds; x++){
+        seedColors.push(generateSeedColor());
+      }
+      update();
+    }
+  });
+
+  buttonList.push( {
+    name: "purple",
+    text: "purp",
+    fontSize: 30,
+    buttonColor: "purple",
+    fontColor: "black",
+    xPos: 808,
+    yPos: 205,
+    width: 84,
+    height: 50,
+    function: function a(){
+      seedColors = [];
+      colorPallette = [1,0.1,1];
+      for(let x = 0; x < numSeeds; x++){
+        let tmpColor = Math.floor(Math.random() * 170 + 35);
+        seedColors.push("rgb(" + tmpColor + "," + 20 + "," + (tmpColor + 10) + ")");
+      }
+      update();
+    }
+  });
+
+  buttonList.push( {
+    name: "Teal",
+    text: "teal",
+    fontSize: 30,
+    buttonColor: "teal",
+    fontColor: "black",
+    xPos: 808,
+    yPos: 270,
+    width: 84,
+    height: 50,
+    function: function a(){
+      seedColors = [];
+      colorPallette = [0.1,1,1];
+      for(let x = 0; x < numSeeds; x++){
+        let tmpColor = Math.floor(Math.random() * 170 + 85);
+        seedColors.push("rgb( 0," + tmpColor + "," + tmpColor + ")");
+      }
+      update();
+    }
+  });
+
+  buttonList.push( {
+    name: "Yellow",
+    text: "yelo",
+    fontSize: 30,
+    buttonColor: "yellow",
+    fontColor: "black",
+    xPos: 808,
+    yPos: 335,
+    width: 84,
+    height: 50,
+    function: function a(){
+      seedColors = [];
+      colorPallette = [1,1,0.1];
+      for(let x = 0; x < numSeeds; x++){
+        let tmpColor = Math.floor(Math.random() * 170 + 85);
+        seedColors.push("rgb(" + tmpColor + "," + tmpColor + ", 40)");
+      }
+      update();
+    }
+  });
+
+  buttonList.push( {
+    name: "Brown",
+    text: "brwn",
+    fontSize: 30,
+    buttonColor: "brown",
+    fontColor: "black",
+    xPos: 808,
+    yPos: 400,
+    width: 84,
+    height: 50,
+    function: function a(){
+      seedColors = [];
+      colorPallette = [1,0.5,0.1];
+      for(let x = 0; x < numSeeds; x++){
+        let tmpColor = Math.random();
+        seedColors.push("rgb(" + (200 * tmpColor) + "," + (100 * tmpColor) +  "," + (20 * tmpColor) + ")");
+      }
+      update();
+    }
+  });
+
+  buttonList.push( {
+    name: "White",
+    text: "whit",
+    fontSize: 30,
+    buttonColor: "white",
+    fontColor: "black",
+    xPos: 808,
+    yPos: 460,
+    width: 84,
+    height: 50,
+    function: function a(){
+      seedColors = [];
+      colorPallette = [0.9,0.9,0.9];
+      for(let x = 0; x < numSeeds; x++){
+        let tmpColor = Math.random();
+        seedColors.push("rgb(" + (55 * tmpColor + 200) + "," + (55 * tmpColor + 200) +  "," + (55 * tmpColor + 200) + ")");
+      }
+      update();
+    }
+  });
+
+  buttonList.push( {
+    name: "Show borders",
+    text: "show",
+    fontSize: 30,
+    buttonColor: "black",
+    fontColor: "#aaa",
+    xPos: 808,
+    yPos: 540,
+    width: 84,
+    height: 50,
+    function: function a(){
+      buttonList.filter(function(button){
+        if(button.name=="Hide borders"){
+          button.buttonColor="black";
+          button.fontColor = "#aaa";
+        }
+      });
+      this.buttonColor="#ccc";
+      this.fontColor = "#888";
+      showBorders = true;
+      update();
+    }
+  });
+
+  buttonList.push( {
+    name: "Hide borders",
+    text: "hide",
+    fontSize: 30,
+    buttonColor: "#ccc",
+    fontColor: "#888",
+    xPos: 808,
+    yPos: 600,
+    width: 84,
+    height: 50,
+    function: function a(){
+      buttonList.filter(function(button){
+        if(button.name=="Show borders"){
+          button.buttonColor="black";
+          button.fontColor = "#aaa";
+        }
+      });
+      this.buttonColor="#ccc";
+      this.fontColor = "#888";
+      showBorders = false;
+      update();
+    }
+  });
+
+  buttonList.push( {
+    name: "Show seeds",
+    text: "show",
+    fontSize: 30,
+    buttonColor: "#ccc",
+    fontColor: "#888",
+    xPos: 808,
+    yPos: 680,
+    width: 84,
+    height: 50,
+    function: function a(){
+      buttonList.filter(function(button){
+        if(button.name=="Hide seeds"){
+          button.buttonColor="black";
+          button.fontColor = "#aaa";
+        }
+      });
+      this.buttonColor="#ccc";
+      this.fontColor = "#888";
+      seedSize = 5;
+      update();
+    }
+  });
+
+  buttonList.push( {
+    name: "Hide seeds",
+    text: "hide",
+    fontSize: 30,
+    buttonColor: "black",
+    fontColor: "#aaa",
+    xPos: 808,
+    yPos: 740,
+    width: 84,
+    height: 50,
+    function: function a(){
+      buttonList.filter(function(button){
+        if(button.name=="Show seeds"){
+          button.buttonColor="black";
+          button.fontColor = "#aaa";
+        }
+      });
+      this.buttonColor="#ccc";
+      this.fontColor = "#888";
+      seedSize = 0;
+      update();
+    }
+  });
+
+}//end generateButtons();
 
 //////////////////////////////////////////////////////////////////////////////
 //  Runs when the mouse is clicked on the canvas, checks for button hits
@@ -307,9 +642,6 @@ function logMouseDown(e){
   if (mouseYPos === undefined) {
         clickPosition.y = e.clientY - 8;
     }
-
-  //If the click wasn't in the UI area, exit function
-  if(clickPosition.y < canvasHeight){ return;}
 
   //Itterate through each button and, if one was clicked, perfrom the associated function
   for(let x = 0; x < buttonList.length; x++){
